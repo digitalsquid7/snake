@@ -39,6 +39,12 @@ func (n *Notifier) Subscribe(subscriber Subscriber, events ...Event) {
 	n.subscribers[subscriber] = eventSet
 }
 
+func (n *Notifier) Unsubscribe(subscribers ...Subscriber) {
+	for _, subscriber := range subscribers {
+		delete(n.subscribers, subscriber)
+	}
+}
+
 func (n *Notifier) SetEvent(event Event) {
 	n.eventsHappened[event] = struct{}{}
 }

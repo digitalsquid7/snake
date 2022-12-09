@@ -5,6 +5,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	_ "image/png"
+	"path/filepath"
 	"snake/pkg/command"
 	"snake/pkg/layer"
 	"snake/pkg/picture"
@@ -26,7 +27,7 @@ func Run() {
 		panic(err)
 	}
 
-	spriteSheet, err := picture.Load("assets\\images\\snake.png")
+	spriteSheet, err := picture.Load(filepath.Join("assets", "images", "snake.png"))
 	if err != nil {
 		panic(err)
 	}
@@ -34,13 +35,7 @@ func Run() {
 	stateNotifier := state.NewNotifier()
 	gameState := state.NewGame(stateNotifier)
 	spriteFactory := sprite.NewFactory(spriteSheet, 16.0, 16.0)
-	layerFactory := layer.NewFactory(gameState, spriteFactory, spriteSheet, stateNotifier)
-
-	layers := []layer.Layer{
-		layerFactory.CreateLayer(layer.BACKGROUND),
-		layerFactory.CreateLayer(layer.RABBIT),
-		layerFactory.CreateLayer(layer.SNAKE),
-	}
+	layerFactory := layer.NewFactory(gameState, spriteFactory, spriteSheet)
 
 	timer := time.Tick(time.Millisecond * 200)
 	commandFinderFactory := command.NewFinderFactory(win, gameState, timer)
@@ -50,7 +45,8 @@ func Run() {
 		commandFinderFactory.CreateFinder(command.FINDER_CHANGE_DIRECTION),
 	}
 
-	windowRenderer := window.NewRenderer(win)
+	windowRenderer := window.NewRenderer(layerFactory, stateNotifier)
+	stateNotifier.Subscribe(windowRenderer, state.EVENT_NEW_GAME, state.EVENT_SNAKE_DIED)
 
 	var (
 		frames = 0
@@ -61,7 +57,7 @@ func Run() {
 		commands := command.Find(commandFinders)
 		command.Execute(commands)
 		stateNotifier.Notify()
-		windowRenderer.Render(layers)
+		windowRenderer.Render(win)
 
 		frames++
 		select {
